@@ -26,16 +26,16 @@ class BiddingRoutes(biddingRegistry: ActorRef[BiddingRegistry.Command])(implicit
   import JsonFormats._
   import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
 
-  val biddingRoutes: Route = {
-    pathPrefix("v1/api") {
+  val routes: Route = {
+    pathPrefix("bidding") {
       concat(
         // #/v1/api/campaigns
-        path("campaigns") {
+        pathPrefix("campaigns") {
           get {
             complete(getCampaigns)
           }
         },
-        path("bid-for-campaign") {
+        pathPrefix("bid-for-campaign") {
           entity(as[BidRequest]) { userBidRequest =>
             onSuccess(bidForCampaign(userBidRequest)) { actionCompleted =>
               complete(actionCompleted)

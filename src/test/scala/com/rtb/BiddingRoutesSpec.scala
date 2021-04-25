@@ -1,23 +1,27 @@
 package com.rtb
 
-//#user-routes-spec
 //#test-top
+
 import akka.actor.testkit.typed.scaladsl.ActorTestKit
 import akka.http.scaladsl.marshalling.Marshal
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.testkit.ScalatestRouteTest
+import com.rtb.dao.Payloads.{BidRequest, Site}
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
-//#set-up
-class UserRoutesSpec extends AnyWordSpec with Matchers with ScalaFutures with ScalatestRouteTest {
-  //#test-top
+/**
+ * Igbalajobi Jamiu.
+ */
+class BiddingRoutesSpec extends AnyWordSpec with Matchers with ScalaFutures with ScalatestRouteTest {
 
-  // the Akka HTTP route testkit does not yet support a typed actor system (https://github.com/akka/akka-http/issues/2036)
+  // the Akka HTTP route testkit does not yet support a typed actor system
   // so we have to adapt for now
   lazy val testKit = ActorTestKit()
+
   implicit def typedSystem = testKit.system
+
   override def createActorSystem(): akka.actor.ActorSystem =
     testKit.system.classicSystem
 
@@ -25,19 +29,18 @@ class UserRoutesSpec extends AnyWordSpec with Matchers with ScalaFutures with Sc
   // We use the real UserRegistryActor to test it while we hit the Routes,
   // but we could "mock" it by implementing it in-place or by using a TestProbe
   // created with testKit.createTestProbe()
-  val userRegistry = testKit.spawn(UserRegistry())
-  lazy val routes = new UserRoutes(userRegistry).userRoutes
+  val biddingRegistry = testKit.spawn(BiddingRegistry())
+  lazy val routes = new BiddingRoutes(biddingRegistry).routes
 
   // use the json formats to marshal and unmarshall objects in the test
-  import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
-  import JsonFormats._
-  //#set-up
 
-  //#actual-test
+  import JsonFormats._
+  import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
+
   "UserRoutes" should {
-    "return no users if no present (GET /users)" in {
+    "return no campaigns if no present (GET /users)" in {
       // note that there's no need for the host part in the uri:
-      val request = HttpRequest(uri = "/users")
+      val request = HttpRequest(uri = "/bidding/campaigns")
 
       request ~> routes ~> check {
         status should ===(StatusCodes.OK)
@@ -49,15 +52,17 @@ class UserRoutesSpec extends AnyWordSpec with Matchers with ScalaFutures with Sc
         entityAs[String] should ===("""{"users":[]}""")
       }
     }
-    //#actual-test
 
-    //#testing-post
-    "be able to add users (POST /users)" in {
-      val user = User("Kapi", 42, "jp")
-      val userEntity = Marshal(user).to[MessageEntity].futureValue // futureValue is from ScalaFutures
+    //#testing-bidding
+    "be able to bid for campaign (POST /bidding/bid-for-campaign)" in {
+      val bidRequest = BidRequest(
+        id = "SGu1Jpq1IO",
+        site = Site(id = "0006a522ce0f4bbbbaa6b3c38cafaa0f", domain = "fake.tld")
+      )
+      val bidRequestEntity = Marshal(bidRequest).to[MessageEntity].futureValue // futureValue is from ScalaFutures
 
       // using the RequestBuilding DSL:
-      val request = Post("/users").withEntity(userEntity)
+      val request = Post("/bidding/bid-for-campaign").withEntity(bidRequestEntity)
 
       request ~> routes ~> check {
         status should ===(StatusCodes.Created)
@@ -69,27 +74,6 @@ class UserRoutesSpec extends AnyWordSpec with Matchers with ScalaFutures with Sc
         entityAs[String] should ===("""{"description":"User Kapi created."}""")
       }
     }
-    //#testing-post
-
-    "be able to remove users (DELETE /users)" in {
-      // user the RequestBuilding DSL provided by ScalatestRouteSpec:
-      val request = Delete(uri = "/users/Kapi")
-
-      request ~> routes ~> check {
-        status should ===(StatusCodes.OK)
-
-        // we expect the response to be json:
-        contentType should ===(ContentTypes.`application/json`)
-
-        // and no entries should be in the list:
-        entityAs[String] should ===("""{"description":"User Kapi deleted."}""")
-      }
-    }
-    //#actual-test
   }
-  //#actual-test
 
-  //#set-up
 }
-//#set-up
-//#user-routes-spec

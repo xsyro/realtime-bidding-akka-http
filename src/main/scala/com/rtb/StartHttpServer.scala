@@ -2,24 +2,24 @@ package com.rtb
 
 import akka.actor.typed.ActorSystem
 import akka.actor.typed.scaladsl.Behaviors
-import akka.http.scaladsl.{Http, ServerBuilder}
+import akka.http.scaladsl.Http
 import akka.http.scaladsl.server.Route
 
-import scala.concurrent.Future
-import scala.util.Failure
-import scala.util.Success
+import scala.util.{Failure, Success}
 
-//#main-class
+/**
+ * Igbalajobi Jamiu.
+ */
 object StartHttpServer extends App {
   //#start-http-server
   private def startHttpServer(routes: Route*)(implicit system: ActorSystem[_]): Unit = {
     // Akka HTTP still needs a classic ActorSystem to start
     import system.executionContext
 
-    val futureBinding: ServerBuilder = Http().newServerAt("localhost", system.settings.config.getInt("my-app.http.port"))
-    Future.sequence(routes.map(x => futureBinding.bind(x))).onComplete {
+    val futureBinding = Http().newServerAt("localhost", system.settings.config.getInt("my-app.http.port"))
+    futureBinding.bind(routes.head).onComplete {
       case Success(binding) =>
-        val address = binding.head.localAddress
+        val address = binding.localAddress
         system.log.info("Server online at http://{}:{}/", address.getHostString, address.getPort)
       case Failure(ex) =>
         system.log.error("Failed to bind HTTP endpoint, terminating system", ex)
@@ -29,20 +29,15 @@ object StartHttpServer extends App {
 
   //#start-http-server
   val rootBehavior = Behaviors.setup[Nothing] { context =>
-    val userRegistryActor = context.spawn(UserRegistry(), "UserRegistryActor")
-    context.watch(userRegistryActor)
 
     val biddingRegistryActor = context.spawn(BiddingRegistry(), "BiddingRegistryActor")
     context.watch(biddingRegistryActor)
 
-    val userRoutes = new UserRoutes(userRegistryActor)(context.system)
     val biddingRoutes = new BiddingRoutes(biddingRegistryActor)(context.system)
 
 
-    startHttpServer(userRoutes.userRoutes, biddingRoutes.biddingRoutes)(context.system)
+    startHttpServer(biddingRoutes.routes)(context.system)
     Behaviors.empty
   }
   ActorSystem[Nothing](rootBehavior, "RealTimeBiddingAkkaHttp")
-  //#server-bootstrapping
 }
-//#main-class

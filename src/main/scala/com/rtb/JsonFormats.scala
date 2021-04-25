@@ -1,6 +1,5 @@
 package com.rtb
 
-import com.rtb.UserRegistry.ActionPerformed
 import com.rtb.dao.Payloads
 import com.rtb.dao.Payloads.{Banner, BidRequest, BidResponse, Campaign, Device, Geo, Impression, Site, Targeting, User => BidUser}
 import spray.json.{JsString, JsValue, JsonFormat}
@@ -12,17 +11,10 @@ import spray.json.DefaultJsonProtocol
 
 object JsonFormats {
   // import the default encoders for primitive types (Int, String, Lists etc)
-
   import DefaultJsonProtocol._
 
-  implicit val userJsonFormat = jsonFormat3(User)
-  implicit val usersJsonFormat = jsonFormat1(Users)
-
-  implicit val actionPerformedJsonFormat = jsonFormat1(ActionPerformed)
-
-
   /**
-   * The order of inter-dependent of class is important to the json formatter. Otherwise, this would result to compile error
+   * The order of inter-dependent of class is important to the json marshal and unmarshall. Otherwise, this would result to compile error
    */
   implicit object UUIDJsonFormat extends JsonFormat[UUID] {
     override def write(obj: UUID): JsValue = JsString(obj.toString)

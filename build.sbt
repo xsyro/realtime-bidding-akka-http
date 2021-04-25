@@ -5,7 +5,8 @@ lazy val root = (project in file(".")).
   settings(
     inThisBuild(List(
       organization    := "dev.jamiu",
-      scalaVersion    := "2.12.7"
+      scalaVersion    := "2.12.7",
+      javaOptions += s"-Dconfig.resource=application.conf",
     )),
     name := "realtime-bidding-akka-http",
     libraryDependencies ++= Seq(
