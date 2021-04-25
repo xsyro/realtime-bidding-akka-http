@@ -14,7 +14,7 @@ object Payloads {
    * @param data
    * @tparam T
    */
-  case class HttpResponse[T](httpStatusCode: Int, description: String, data: T)
+  case class HttpResponse[T](httpStatusCode: Int, description: String, data: Option[T] = None)
 
 
   /**
@@ -25,17 +25,12 @@ object Payloads {
   case class User(id: String, geo: Option[Geo])
   case class Device(id: String, geo: Option[Geo])
   case class Geo(country: Option[String])
-  case class BidRequest(id: String,
-                        site: Site,
-                        imp: Option[List[Impression]] = None,
-                        user: Option[User] = None,
-                        device: Option[Device] = None
-                       )
+  case class BidRequest(id: String, site: Site, imp: Option[List[Impression]] = None, user: Option[User] = None, device: Option[Device] = None)
 
   /**
    * Http response-body for providing payload
    */
-  case class BidResponse(id: String, bidRequestId: String, price: Double, adid: Option[String], banner: Option[Banner])
+  case class BidResponse(id: UUID, bidRequestId: String,  price: Double, adid: Option[String], banner: Option[Banner])
 
 
   case class Campaign(id: Int, country: String, targeting: Targeting, banners: List[Banner], bid: Double)
