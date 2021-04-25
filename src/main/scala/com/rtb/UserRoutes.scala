@@ -1,11 +1,11 @@
-package com.example
+package com.rtb
 
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Route
 
 import scala.concurrent.Future
-import com.example.UserRegistry._
+import com.rtb.UserRegistry._
 import akka.actor.typed.ActorRef
 import akka.actor.typed.ActorSystem
 import akka.actor.typed.scaladsl.AskPattern._
@@ -46,7 +46,7 @@ class UserRoutes(userRegistry: ActorRef[UserRegistry.Command])(implicit val syst
             },
             post {
               entity(as[User]) { user =>
-                onSuccess(createUser(user)) { performed =>
+                onSuccess(createUser(user)) { performed: ActionPerformed =>
                   complete((StatusCodes.Created, performed))
                 }
               }

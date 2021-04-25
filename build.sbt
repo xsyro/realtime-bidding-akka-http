@@ -4,8 +4,8 @@ lazy val akkaVersion    = "2.6.14"
 lazy val root = (project in file(".")).
   settings(
     inThisBuild(List(
-      organization    := "com.jamiu",
-      scalaVersion    := "2.13.4"
+      organization    := "dev.jamiu",
+      scalaVersion    := "2.12.7"
     )),
     name := "realtime-bidding-akka-http",
     libraryDependencies ++= Seq(

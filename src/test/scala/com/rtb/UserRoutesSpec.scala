@@ -1,4 +1,4 @@
-package com.example
+package com.rtb
 
 //#user-routes-spec
 //#test-top
