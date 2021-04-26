@@ -22,7 +22,7 @@ object BiddingRegistry {
 
   def apply(): Behavior[Command] = Behaviors.receiveMessage {
     case GetCampaigns(replyTo) =>
-      val campaigns = getCampainsFromDB
+      val campaigns = getCampaignsFromDB
       replyTo ! (if(campaigns.isEmpty) HttpResponse(httpStatusCode = StatusCodes.NoContent.intValue, description = "No campaign at the moment. Please check back later.") else HttpResponse(httpStatusCode = StatusCodes.OK.intValue, description = "Request successful", data = Some(campaigns)))
       Behaviors.same
     case GetBidding(bidRequest, replyTo) =>
@@ -33,6 +33,11 @@ object BiddingRegistry {
         bidRequest.imp.map(_.flatMap(_.bidFloor)),
         bidRequest.user.flatMap(_.geo).flatMap(_.country),
         bidRequest.site.id,
+
+        /**
+         * At least one of w, wmin, wmax will be specified for width and at least one of h, hmin, hmax will be specified for height.
+         * Always prefer validating w and h if they exist, otherwise fallback to wmin, wmax, hmin and hmax. min/max values might have different combinations
+         */
         bidRequest.imp.map(_.flatMap(y => y.w.orElse(y.wmin).orElse(y.wmax))),
         bidRequest.imp.map(_.flatMap(y => y.h.orElse(y.hmin).orElse(y.hmax)))
       )
@@ -40,13 +45,21 @@ object BiddingRegistry {
       /**
        * Perform logic to find a matching pair of campaign based on the user's input.
        */
-      val data = getCampainsFromDB.find{ node =>
-        true
+      val data = getCampaignsFromDB.find{ node =>
+        //Check against the siteIds
+        node.targeting.targetedSiteIds.map(_.toString).exists(_.equalsIgnoreCase(siteId)) &&
+        //Check the country if matched
+        country.contains(node.country) &&
+        //Optionally matching the width and height of a campaign banner
+        (widths.exists(_.containsSlice(node.banners.map(_.width))) || heights.exists(_.containsSlice(node.banners.map(_.height))))
+        //
+
       }.map(campaign => BidResponse(
-        id = UUID.randomUUID(),
+        id = UUID.randomUUID(), //Generate a bidResponseId with UUID for unique references
         bidRequestId = bidRequest.id,
         banner = campaign.banners.headOption,
         price = bidRequest.imp.map(_.flatMap(_.bidFloor)).map(_.sum).getOrElse(0),
+        // adid is the campaign ID of the campaign selected
         adid = Option(campaign.id.toString)
       ))
 
@@ -63,12 +76,12 @@ object BiddingRegistry {
    * Usually, this should come from the database or any storage system.
    * @return
    */
-  private def getCampainsFromDB: Seq[Campaign] = Seq(
+  private def getCampaignsFromDB: Seq[Campaign] = Seq(
     Campaign(
       id = 1,
       country = "LT",
       targeting = Targeting(
-        targetedSiteIds = List(UUID.randomUUID())
+        targetedSiteIds = List(UUID.fromString("5fdb2b0f-00f8-44b7-9c6a-04ad66d9326a"))
       ),
       banners = List(
         Banner(

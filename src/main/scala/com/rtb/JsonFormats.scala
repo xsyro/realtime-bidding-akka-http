@@ -9,6 +9,9 @@ import java.util.UUID
 //#json-formats
 import spray.json.DefaultJsonProtocol
 
+/**
+ * Igbalajobi Jamiu.
+ */
 object JsonFormats {
   // import the default encoders for primitive types (Int, String, Lists etc)
   import DefaultJsonProtocol._
@@ -18,7 +21,7 @@ object JsonFormats {
    */
   implicit object UUIDJsonFormat extends JsonFormat[UUID] {
     override def write(obj: UUID): JsValue = JsString(obj.toString)
-    override def read(json: JsValue): UUID = UUID.fromString(json.toString())
+    override def read(json: JsValue): UUID = UUID.fromString(json.convertTo[String])
   }
   implicit val bannerResponseJsonFormat = jsonFormat4(Banner)
   implicit val geoJsonFormat = jsonFormat1(Geo)
